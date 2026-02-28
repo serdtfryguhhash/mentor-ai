@@ -1,47 +1,43 @@
 /**
- * Mentor.ai — AI Client powered by Ollama (local LLM, zero API keys)
+ * Mentor.ai — AI Client powered by Anthropic Claude SDK
  *
- * Connects to Ollama at http://localhost:11434/v1 using llama3.2
+ * Uses Claude claude-sonnet-4-20250514 via the Anthropic SDK.
  * Each mentor has a unique system prompt that shapes their personality.
  */
 
-const OLLAMA_BASE_URL = "http://localhost:11434/v1";
-const MODEL = "llama3.2";
+import Anthropic from "@anthropic-ai/sdk";
+
+const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+const MODEL = "claude-sonnet-4-20250514";
 
 interface ChatMessage {
   role: "system" | "user" | "assistant";
   content: string;
 }
 
-interface ChatResponse {
-  choices: Array<{ message: { role: string; content: string } }>;
-}
-
 export async function chat(
   messages: ChatMessage[],
   options: { temperature?: number; maxTokens?: number } = {}
 ): Promise<string> {
-  try {
-    const response = await fetch(`${OLLAMA_BASE_URL}/chat/completions`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: MODEL,
-        messages,
-        temperature: options.temperature ?? 0.8,
-        max_tokens: options.maxTokens ?? 2048,
-      }),
-    });
+  // Anthropic requires system messages as a separate parameter, not in the messages array
+  const systemMessages = messages.filter((m) => m.role === "system");
+  const nonSystemMessages = messages.filter((m) => m.role !== "system");
 
-    if (!response.ok) throw new Error(`Ollama error: ${response.status}`);
-    const data: ChatResponse = await response.json();
-    return data.choices[0]?.message?.content ?? "No response generated.";
-  } catch (error) {
-    if (error instanceof TypeError && error.message.includes("fetch")) {
-      throw new Error("Ollama is not running. Open the Ollama app from Applications.");
-    }
-    throw error;
-  }
+  const systemPrompt = systemMessages.map((m) => m.content).join("\n\n");
+
+  const response = await client.messages.create({
+    model: MODEL,
+    max_tokens: options.maxTokens ?? 2048,
+    temperature: options.temperature ?? 0.8,
+    ...(systemPrompt ? { system: systemPrompt } : {}),
+    messages: nonSystemMessages.map((m) => ({
+      role: m.role as "user" | "assistant",
+      content: m.content,
+    })),
+  });
+
+  const textBlock = response.content.find((block) => block.type === "text");
+  return textBlock?.text ?? "No response generated.";
 }
 
 /** Start or continue a mentoring session with a specific mentor */
@@ -143,13 +139,8 @@ export async function recommendMentors(goals: string[]): Promise<string> {
 }
 
 export async function checkAIStatus(): Promise<{ available: boolean; model: string; error?: string }> {
-  try {
-    const response = await fetch("http://localhost:11434/api/tags");
-    if (!response.ok) return { available: false, model: MODEL, error: "Ollama not responding" };
-    const data = await response.json();
-    const found = data.models?.some((m: { name: string }) => m.name.startsWith(MODEL));
-    return { available: !!found, model: MODEL, error: found ? undefined : `Model ${MODEL} not found` };
-  } catch {
-    return { available: false, model: MODEL, error: "Ollama is not running" };
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return { available: false, model: MODEL, error: "ANTHROPIC_API_KEY is not set" };
   }
+  return { available: true, model: MODEL };
 }

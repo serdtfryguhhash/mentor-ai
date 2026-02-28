@@ -38,20 +38,48 @@ export default function ChatInterface({ mentor, sessionId }: ChatInterfaceProps)
   const simulateMentorResponse = async (userMessage: string) => {
     setIsTyping(true);
 
-    // Simulate AI response delay
-    await new Promise((resolve) => setTimeout(resolve, 1500 + Math.random() * 2000));
+    try {
+      // Build conversation history from existing messages for context
+      const conversationHistory = messages.map((m) => ({
+        role: m.role === "mentor" ? "assistant" : m.role,
+        content: m.content,
+      }));
 
-    const responses = getContextualResponse(mentor, userMessage);
-    const response = responses[Math.floor(Math.random() * responses.length)];
+      const res = await fetch("/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "mentor-chat",
+          mentorName: mentor.name,
+          mentorSystemPrompt: mentor.systemPrompt,
+          message: userMessage,
+          conversationHistory,
+        }),
+      });
 
-    addMessage(sessionId, {
-      id: generateId(),
-      role: "mentor",
-      content: response,
-      timestamp: new Date().toISOString(),
-    });
+      const data = await res.json();
 
-    setIsTyping(false);
+      if (!data.success || !data.response) {
+        throw new Error(data.error || "Failed to get response");
+      }
+
+      addMessage(sessionId, {
+        id: generateId(),
+        role: "mentor",
+        content: data.response,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error("AI chat error:", error);
+      addMessage(sessionId, {
+        id: generateId(),
+        role: "mentor",
+        content: "I apologize, but I'm having trouble responding right now. Please try again in a moment.",
+        timestamp: new Date().toISOString(),
+      });
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   const handleSend = async () => {
@@ -257,51 +285,3 @@ export default function ChatInterface({ mentor, sessionId }: ChatInterfaceProps)
   );
 }
 
-function getContextualResponse(mentor: Mentor, userMessage: string): string[] {
-  const lower = userMessage.toLowerCase();
-
-
-  const baseResponses = [
-    `${mentor.philosophy}\n\nLet me share something from my experience that relates to what you've described. ${mentor.famousQuotes[0]} This is not merely a saying - it is a principle I have lived by, often through great difficulty.\n\nTell me more about what brings this question to your mind. What is the deeper concern beneath your words?`,
-
-    `Ah, this touches on something I have thought deeply about. ${mentor.famousQuotes[1]}\n\nIn my time, I faced a similar challenge. The answer I found was not what I expected - it required me to look inward before looking outward. What have you already tried? And more importantly, what are you afraid to try?`,
-
-    `You raise a question that goes to the heart of what it means to live well. Let me respond with something that may seem indirect but is, I believe, precisely what you need to hear.\n\n*${mentor.famousQuotes[2]}*\n\nNow, let me challenge you: are you asking me this question because you genuinely do not know the answer, or because you know the answer but are hoping I will give you a different one?`,
-
-    `I appreciate the depth of your question. In my experience - and I have had a great deal of it, in circumstances both triumphant and devastating - the answer to questions like yours lies not in what to *do* but in who to *become*.\n\n${mentor.philosophy}\n\nWhat would the best version of yourself do in this situation? You already know. The question is whether you have the courage to do it.`,
-  ];
-
-  if (lower.includes("afraid") || lower.includes("fear") || lower.includes("scared") || lower.includes("anxious")) {
-    return [
-      `Fear. Yes, I know it well. ${mentor.famousQuotes[0]}\n\nLet me tell you something about fear that I learned through my own struggles: fear is not the enemy. Fear is information. It tells you where the growth is. The question is not how to eliminate fear, but whether you will let it be your guide or your prison.\n\nWhat specifically are you afraid of? Name it precisely. Fear loses much of its power when you look at it directly.`,
-
-      `You speak of fear, and I will not dismiss it - I have felt it keenly in my own life. But I will tell you what I have learned: *${mentor.famousQuotes[2]}*\n\nThe fear you feel is often a sign that you are approaching something important. What would you do tomorrow if this fear suddenly vanished? Start there - not by conquering the fear, but by acting alongside it.`,
-    ];
-  }
-
-  if (lower.includes("purpose") || lower.includes("meaning") || lower.includes("lost") || lower.includes("direction")) {
-    return [
-      `The search for purpose - this is perhaps the most important question a human being can ask. And I will tell you something that may surprise you: the answer is not found through thinking alone. It is found through *engagement with life*.\n\n${mentor.philosophy}\n\nPurpose reveals itself not to those who sit and wait for a sign, but to those who act, reflect, and then act again. What activities cause you to lose track of time? What injustice makes your blood boil? What would you do if no one were watching? The answers to these questions are your compass.`,
-
-      `*${mentor.famousQuotes[1]}*\n\nI have found that purpose is not a destination but a practice. It is not something you discover once and hold forever - it is something you cultivate daily through attention and courage.\n\nTell me: when in your life have you felt most alive? Most yourself? What were you doing, and why did you stop?`,
-    ];
-  }
-
-  if (lower.includes("relationship") || lower.includes("love") || lower.includes("partner") || lower.includes("friend")) {
-    return [
-      `Relationships - they are both the source of our greatest joy and our deepest pain, are they not? In my experience, the quality of our relationships mirrors the quality of our relationship with ourselves.\n\n*${mentor.famousQuotes[0]}*\n\nBefore we discuss the other person, tell me: what are you bringing to this relationship? Not what you think you should bring, but what you honestly are bringing - including the parts you would rather not acknowledge.`,
-
-      `The challenge of human connection is that it requires us to be vulnerable, and vulnerability feels like danger. But ${mentor.philosophy.toLowerCase()}\n\nWhat I have learned is this: the relationships that transform us are the ones where we allow ourselves to be truly seen. Not the polished version. Not the carefully curated self. The real one.\n\nWhat are you hiding from this person, and what would happen if you stopped?`,
-    ];
-  }
-
-  if (lower.includes("work") || lower.includes("career") || lower.includes("job") || lower.includes("business")) {
-    return [
-      `Work and vocation - let me share something I believe deeply: *${mentor.famousQuotes[1]}*\n\nThe question is not merely what work you should do, but what work will allow you to become who you are meant to be. Too many people choose their work based on what others expect, what pays well, or what feels safe. True vocation lies at the intersection of what you love, what you are good at, what the world needs, and what you can be sustained by.\n\nWhich of these four elements is missing in your current situation?`,
-
-      `${mentor.philosophy}\n\nI have seen too many people sacrifice their deepest calling at the altar of security or approval. And I have also seen people pursue passion without practical wisdom and suffer for it.\n\nThe path forward requires both courage and strategy. Tell me more about what you are considering, and let us think about it together with clear eyes and a brave heart.`,
-    ];
-  }
-
-  return baseResponses;
-}

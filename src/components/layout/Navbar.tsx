@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/store/useStore";
+import { StreakBadge } from "@/components/shared/StreakBadge";
 
 const navLinks = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -52,6 +53,7 @@ export default function Navbar() {
               <Link href="/blog" className="text-brand-text-muted hover:text-brand-text transition-colors text-sm">
                 Blog
               </Link>
+              <StreakBadge />
               <Link href="/login">
                 <Button variant="ghost" size="sm">Log In</Button>
               </Link>
@@ -95,14 +97,17 @@ export default function Navbar() {
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-64 bg-brand-surface border-r border-brand-border flex-col z-40">
         <div className="p-4 border-b border-brand-border">
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-accent to-purple-700 flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-xl font-heading font-bold text-brand-text">
-              Mentor<span className="text-brand-accent">.ai</span>
-            </span>
-          </Link>
+          <div className="flex items-center justify-between">
+            <Link href="/dashboard" className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-accent to-purple-700 flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-white" />
+              </div>
+              <span className="text-xl font-heading font-bold text-brand-text">
+                Mentor<span className="text-brand-accent">.ai</span>
+              </span>
+            </Link>
+            <StreakBadge />
+          </div>
         </div>
 
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
@@ -192,9 +197,12 @@ export default function Navbar() {
               Mentor<span className="text-brand-accent">.ai</span>
             </span>
           </Link>
-          <button className="text-brand-text p-2" onClick={() => setMobileOpen(!mobileOpen)}>
-            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
+          <div className="flex items-center gap-2">
+            <StreakBadge />
+            <button className="text-brand-text p-2" onClick={() => setMobileOpen(!mobileOpen)}>
+              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
       </div>
 
