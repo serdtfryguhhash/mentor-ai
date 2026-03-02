@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles, Menu, X, BookOpen, Users, Compass, Brain,
   Settings, LogOut, Crown, LayoutDashboard, MessageCircle,
-  Lightbulb, Sun, CreditCard, Share2
+  Lightbulb, Sun, CreditCard, Share2, Target, TrendingUp
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -17,6 +17,8 @@ import { StreakBadge } from "@/components/shared/StreakBadge";
 const navLinks = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/mentors", label: "Mentors", icon: Users },
+  { href: "/quiz", label: "Find My Mentor", icon: Target },
+  { href: "/progress", label: "Progress", icon: TrendingUp },
   { href: "/circle", label: "Circle", icon: Brain, premium: true },
   { href: "/insights", label: "Insights", icon: Lightbulb },
   { href: "/daily", label: "Daily Wisdom", icon: Sun },
