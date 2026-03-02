@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { BookOpen, Download, Search, Filter, Edit2, Save, X, Trash2 } from "lucide-react";
+import { BookOpen, Download, Search, Filter, Edit2, Save, X, Trash2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,12 +13,16 @@ import Navbar from "@/components/layout/Navbar";
 import { useStore } from "@/store/useStore";
 import { mentors } from "@/data/mentors";
 import { getInitials, formatDate } from "@/lib/utils";
+import WisdomCollection from "@/components/features/wisdom-collection";
+
+type TabView = "insights" | "wisdom";
 
 export default function InsightsPage() {
   const { insights, updateInsightReflection } = useStore();
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [reflectionDraft, setReflectionDraft] = useState("");
+  const [activeTab, setActiveTab] = useState<TabView>("insights");
 
   const filtered = insights.filter((i) => {
     if (!search) return true;
@@ -63,99 +67,131 @@ export default function InsightsPage() {
             </div>
           </motion.div>
 
-          <div className="relative mb-6">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-text-muted" />
-            <Input placeholder="Search insights by content, mentor, or tag..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
+          {/* Tab Navigation */}
+          <div className="flex gap-1 mb-6 p-1 bg-brand-surface rounded-lg border border-brand-border w-fit">
+            <button
+              onClick={() => setActiveTab("insights")}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                activeTab === "insights"
+                  ? "bg-brand-accent/20 text-brand-accent-light"
+                  : "text-brand-text-muted hover:text-brand-text"
+              }`}
+            >
+              <BookOpen className="w-4 h-4 inline-block mr-1.5" />
+              Insights ({insights.length})
+            </button>
+            <button
+              onClick={() => setActiveTab("wisdom")}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                activeTab === "wisdom"
+                  ? "bg-brand-accent/20 text-brand-accent-light"
+                  : "text-brand-text-muted hover:text-brand-text"
+              }`}
+            >
+              <Sparkles className="w-4 h-4 inline-block mr-1.5" />
+              Wisdom Collection
+            </button>
           </div>
 
-          {filtered.length === 0 ? (
-            <div className="text-center py-16">
-              <BookOpen className="w-12 h-12 text-brand-text-muted mx-auto mb-3 opacity-50" />
-              <h3 className="text-lg font-heading font-semibold text-brand-text-muted">
-                {insights.length === 0 ? "No insights yet" : "No matching insights"}
-              </h3>
-              <p className="text-sm text-brand-text-muted mt-1">
-                {insights.length === 0
-                  ? "During your mentoring sessions, click the bookmark icon on any message to save it here."
-                  : "Try adjusting your search terms."}
-              </p>
-            </div>
+          {activeTab === "wisdom" ? (
+            <WisdomCollection />
           ) : (
-            <div className="space-y-4">
-              {filtered.map((insight, i) => {
-                const mentor = mentors.find((m) => m.id === insight.mentor_id);
-                return (
-                  <motion.div key={insight.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-                    <Card>
-                      <CardContent className="p-5">
-                        <div className="flex items-start gap-3">
-                          {mentor && (
-                            <Avatar size="md" className="shrink-0">
-                              <AvatarFallback className="text-xs" style={{ background: `linear-gradient(135deg, ${mentor.accentColor}, ${mentor.accentColor}88)` }}>
-                                {getInitials(mentor.name)}
-                              </AvatarFallback>
-                            </Avatar>
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between mb-1">
-                              <p className="text-sm font-medium text-brand-text">{mentor?.name || "Unknown Mentor"}</p>
-                              <span className="text-[10px] text-brand-text-muted">{formatDate(insight.created_at)}</span>
-                            </div>
-                            <p className="text-sm text-brand-text-muted leading-relaxed">{insight.content}</p>
+            <>
+              <div className="relative mb-6">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-text-muted" />
+                <Input placeholder="Search insights by content, mentor, or tag..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
+              </div>
 
-                            <div className="flex flex-wrap gap-1 mt-2">
-                              {insight.tags.map((tag) => (
-                                <Badge key={tag} variant="secondary" className="text-[10px]">{tag}</Badge>
-                              ))}
-                            </div>
-
-                            {/* Reflection */}
-                            <div className="mt-3 pt-3 border-t border-brand-border">
-                              {editingId === insight.id ? (
-                                <div className="space-y-2">
-                                  <Textarea
-                                    value={reflectionDraft}
-                                    onChange={(e) => setReflectionDraft(e.target.value)}
-                                    placeholder="Write your personal reflection on this insight..."
-                                    rows={3}
-                                    className="text-sm"
-                                  />
-                                  <div className="flex gap-2">
-                                    <Button size="sm" onClick={() => saveReflection(insight.id)}>
-                                      <Save className="w-3 h-3 mr-1" /> Save
-                                    </Button>
-                                    <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
-                                      <X className="w-3 h-3 mr-1" /> Cancel
-                                    </Button>
-                                  </div>
+              {filtered.length === 0 ? (
+                <div className="text-center py-16">
+                  <BookOpen className="w-12 h-12 text-brand-text-muted mx-auto mb-3 opacity-50" />
+                  <h3 className="text-lg font-heading font-semibold text-brand-text-muted">
+                    {insights.length === 0 ? "No insights yet" : "No matching insights"}
+                  </h3>
+                  <p className="text-sm text-brand-text-muted mt-1">
+                    {insights.length === 0
+                      ? "During your mentoring sessions, click the bookmark icon on any message to save it here."
+                      : "Try adjusting your search terms."}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {filtered.map((insight, i) => {
+                    const mentor = mentors.find((m) => m.id === insight.mentor_id);
+                    return (
+                      <motion.div key={insight.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+                        <Card>
+                          <CardContent className="p-5">
+                            <div className="flex items-start gap-3">
+                              {mentor && (
+                                <Avatar size="md" className="shrink-0">
+                                  <AvatarFallback className="text-xs" style={{ background: `linear-gradient(135deg, ${mentor.accentColor}, ${mentor.accentColor}88)` }}>
+                                    {getInitials(mentor.name)}
+                                  </AvatarFallback>
+                                </Avatar>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between mb-1">
+                                  <p className="text-sm font-medium text-brand-text">{mentor?.name || "Unknown Mentor"}</p>
+                                  <span className="text-[10px] text-brand-text-muted">{formatDate(insight.created_at)}</span>
                                 </div>
-                              ) : (
-                                <div>
-                                  {insight.reflection ? (
-                                    <div>
-                                      <p className="text-xs text-brand-accent-light font-medium mb-1">My Reflection</p>
-                                      <p className="text-sm text-brand-text-muted italic">{insight.reflection}</p>
-                                      <button onClick={() => startEdit(insight.id, insight.reflection)} className="text-[10px] text-brand-accent hover:underline mt-1">Edit reflection</button>
+                                <p className="text-sm text-brand-text-muted leading-relaxed">{insight.content}</p>
+
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                  {insight.tags.map((tag) => (
+                                    <Badge key={tag} variant="secondary" className="text-[10px]">{tag}</Badge>
+                                  ))}
+                                </div>
+
+                                {/* Reflection */}
+                                <div className="mt-3 pt-3 border-t border-brand-border">
+                                  {editingId === insight.id ? (
+                                    <div className="space-y-2">
+                                      <Textarea
+                                        value={reflectionDraft}
+                                        onChange={(e) => setReflectionDraft(e.target.value)}
+                                        placeholder="Write your personal reflection on this insight..."
+                                        rows={3}
+                                        className="text-sm"
+                                      />
+                                      <div className="flex gap-2">
+                                        <Button size="sm" onClick={() => saveReflection(insight.id)}>
+                                          <Save className="w-3 h-3 mr-1" /> Save
+                                        </Button>
+                                        <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
+                                          <X className="w-3 h-3 mr-1" /> Cancel
+                                        </Button>
+                                      </div>
                                     </div>
                                   ) : (
-                                    <button
-                                      onClick={() => startEdit(insight.id, null)}
-                                      className="flex items-center gap-1.5 text-xs text-brand-accent hover:underline"
-                                    >
-                                      <Edit2 className="w-3 h-3" /> Add personal reflection
-                                    </button>
+                                    <div>
+                                      {insight.reflection ? (
+                                        <div>
+                                          <p className="text-xs text-brand-accent-light font-medium mb-1">My Reflection</p>
+                                          <p className="text-sm text-brand-text-muted italic">{insight.reflection}</p>
+                                          <button onClick={() => startEdit(insight.id, insight.reflection)} className="text-[10px] text-brand-accent hover:underline mt-1">Edit reflection</button>
+                                        </div>
+                                      ) : (
+                                        <button
+                                          onClick={() => startEdit(insight.id, null)}
+                                          className="flex items-center gap-1.5 text-xs text-brand-accent hover:underline"
+                                        >
+                                          <Edit2 className="w-3 h-3" /> Add personal reflection
+                                        </button>
+                                      )}
+                                    </div>
                                   )}
                                 </div>
-                              )}
+                              </div>
                             </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                );
-              })}
-            </div>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              )}
+            </>
           )}
         </div>
       </main>

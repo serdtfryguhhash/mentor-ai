@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
+import { AchievementToastWrapper } from "@/components/shared/AchievementToastWrapper";
 
 export const metadata: Metadata = {
   title: "Mentor.ai - AI Mentorship from History's Greatest Minds",
@@ -17,6 +18,7 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className="bg-brand-background text-brand-text antialiased">
         {children}
+        <AchievementToastWrapper />
         <Toaster
           position="top-right"
           toastOptions={{

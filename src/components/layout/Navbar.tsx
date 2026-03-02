@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/store/useStore";
 import { StreakBadge } from "@/components/shared/StreakBadge";
+import { XPBar } from "@/components/shared/XPBar";
 
 const navLinks = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -56,6 +57,7 @@ export default function Navbar() {
                 Blog
               </Link>
               <StreakBadge />
+              <XPBar />
               <Link href="/login">
                 <Button variant="ghost" size="sm">Log In</Button>
               </Link>
@@ -109,6 +111,10 @@ export default function Navbar() {
               </span>
             </Link>
             <StreakBadge />
+          </div>
+          {/* XP Bar in sidebar */}
+          <div className="mt-3">
+            <XPBar />
           </div>
         </div>
 
@@ -200,6 +206,7 @@ export default function Navbar() {
             </span>
           </Link>
           <div className="flex items-center gap-2">
+            <XPBar />
             <StreakBadge />
             <button className="text-brand-text p-2" onClick={() => setMobileOpen(!mobileOpen)}>
               {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}

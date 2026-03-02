@@ -17,6 +17,7 @@ import {
   Trophy,
   Target,
   ArrowUpRight,
+  Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,7 +29,10 @@ import { mentors } from "@/data/mentors";
 import { getInitials, cn, getCategoryIcon } from "@/lib/utils";
 import { getStats } from "@/lib/engagement";
 import { getMentorsExplored, type MentorExplored } from "@/lib/progress";
+import { getLevel, getLevelProgress } from "@/lib/gamification";
 import ProgressCharts from "@/components/progress/ProgressCharts";
+import GrowthRadar from "@/components/features/growth-radar";
+import MentorGoals from "@/components/features/mentor-goals";
 
 function getWeeklyActivity(): { day: string; sessions: number; insights: number }[] {
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -40,7 +44,6 @@ function getWeeklyActivity(): { day: string; sessions: number; insights: number 
     date.setDate(date.getDate() - i);
     const dayName = days[date.getDay()];
 
-    // Generate sample activity data based on engagement
     const sessionsForDay = Math.floor(Math.random() * 4);
     const insightsForDay = Math.floor(Math.random() * 3);
 
@@ -76,7 +79,6 @@ function getCategoryDistribution(
     }
   });
 
-  // If no real sessions, show demo data
   if (Object.keys(counts).length === 0) {
     return [
       { name: "Philosophy", value: 8, color: "#A855F7" },
@@ -149,7 +151,7 @@ function getMilestones(
 }
 
 export default function ProgressPage() {
-  const { sessions, insights, favoriteMentors } = useStore();
+  const { sessions, insights, favoriteMentors, xp, sessionStreak: storeStreak } = useStore();
   const [engagementStats, setEngagementStats] = useState({
     currentStreak: 0,
     longestStreak: 0,
@@ -158,6 +160,9 @@ export default function ProgressPage() {
     joinedDate: "",
   });
   const [explored, setExplored] = useState<MentorExplored[]>([]);
+
+  const level = getLevel(xp);
+  const levelProgress = getLevelProgress(xp);
 
   useEffect(() => {
     const stats = getStats();
@@ -189,7 +194,6 @@ export default function ProgressPage() {
     [sessions.length, insights.length, engagementStats.currentStreak, explored.length, uniqueMentorsUsed]
   );
 
-  // Top mentors by session count
   const topMentors = useMemo(() => {
     const counts: Record<string, number> = {};
     sessions.forEach((s) => {
@@ -222,17 +226,17 @@ export default function ProgressPage() {
     },
     {
       label: "Day Streak",
-      value: engagementStats.currentStreak,
+      value: storeStreak || engagementStats.currentStreak,
       icon: Flame,
       color: "from-orange-500 to-red-500",
       description: `Best: ${engagementStats.longestStreak} days`,
     },
     {
-      label: "Insights",
-      value: insights.length,
-      icon: Lightbulb,
-      color: "from-amber-500 to-yellow-500",
-      description: "Wisdom captured",
+      label: "XP",
+      value: xp,
+      icon: Zap,
+      color: "from-purple-400 to-violet-500",
+      description: `${level.icon} ${level.name} Level`,
     },
   ];
 
@@ -301,11 +305,29 @@ export default function ProgressPage() {
             ))}
           </div>
 
+          {/* Growth Radar + Goal Accountability */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15, ease: [0.4, 0, 0.2, 1] as const }}
+            >
+              <GrowthRadar />
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, ease: [0.4, 0, 0.2, 1] as const }}
+            >
+              <MentorGoals />
+            </motion.div>
+          </div>
+
           {/* Charts Section */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, ease: [0.4, 0, 0.2, 1] as const }}
+            transition={{ delay: 0.25, ease: [0.4, 0, 0.2, 1] as const }}
             className="mb-8"
           >
             <ProgressCharts

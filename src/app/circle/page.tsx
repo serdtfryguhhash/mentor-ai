@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Brain, Send, Crown, X, Plus, Sparkles, Loader2 } from "lucide-react";
+import { Brain, Send, Crown, X, Plus, Sparkles, Loader2, GitCompare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +12,9 @@ import Navbar from "@/components/layout/Navbar";
 import { useStore } from "@/store/useStore";
 import { mentors } from "@/data/mentors";
 import { getInitials, generateId, cn } from "@/lib/utils";
+import PerspectiveCompare from "@/components/features/perspective-compare";
+
+type TabView = "circle" | "compare";
 
 export default function CirclePage() {
   const [question, setQuestion] = useState("");
@@ -19,6 +22,7 @@ export default function CirclePage() {
   const [loading, setLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [responses, setResponses] = useState<{ mentorId: string; response: string }[]>([]);
+  const [activeTab, setActiveTab] = useState<TabView>("circle");
   const { circles, createCircle, addCircleResponse } = useStore();
 
   const toggleMentor = (id: string) => {
@@ -38,13 +42,31 @@ export default function CirclePage() {
     const circle = createCircle(question, selectedMentorIds);
 
     for (const mentorId of selectedMentorIds) {
-      await new Promise((r) => setTimeout(r, 1500 + Math.random() * 1500));
       const mentor = mentors.find((m) => m.id === mentorId);
       if (!mentor) continue;
 
-      const response = generateCircleResponse(mentor, question);
-      addCircleResponse(circle.id, mentorId, response);
-      setResponses((prev) => [...prev, { mentorId, response }]);
+      try {
+        const res = await fetch("/api/ai/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "mentor-chat",
+            mentorName: mentor.name,
+            mentorSystemPrompt: mentor.systemPrompt,
+            message: question,
+            conversationHistory: [],
+          }),
+        });
+        const data = await res.json();
+        if (data.success && data.response) {
+          addCircleResponse(circle.id, mentorId, data.response);
+          setResponses((prev) => [...prev, { mentorId, response: data.response }]);
+        }
+      } catch {
+        const fallbackResponse = generateCircleResponse(mentor, question);
+        addCircleResponse(circle.id, mentorId, fallbackResponse);
+        setResponses((prev) => [...prev, { mentorId, response: fallbackResponse }]);
+      }
     }
 
     setLoading(false);
@@ -62,106 +84,162 @@ export default function CirclePage() {
               </div>
               <div>
                 <h1 className="text-2xl sm:text-3xl font-heading font-bold text-brand-text">Mentor Circle</h1>
-                <p className="text-brand-text-muted text-sm">Ask one question, receive wisdom from multiple mentors side by side</p>
+                <p className="text-brand-text-muted text-sm">Ask one question, receive wisdom from multiple mentors</p>
               </div>
               <Badge variant="gold" className="ml-auto"><Crown className="w-3 h-3 mr-1" /> Executive</Badge>
             </div>
           </motion.div>
 
-          <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left: Setup */}
-            <div className="space-y-4">
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Select 2-5 Mentors</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                    {mentors.map((mentor) => {
-                      const selected = selectedMentorIds.includes(mentor.id);
-                      return (
-                        <button
-                          key={mentor.id}
-                          onClick={() => toggleMentor(mentor.id)}
-                          disabled={!selected && selectedMentorIds.length >= 5}
-                          className={cn(
-                            "w-full flex items-center gap-2 p-2 rounded-lg text-left transition-all border",
-                            selected
-                              ? "border-brand-accent bg-brand-accent/10"
-                              : "border-transparent hover:bg-brand-background disabled:opacity-40"
-                          )}
-                        >
-                          <Avatar size="sm">
-                            <AvatarFallback className="text-[10px]" style={{ background: `linear-gradient(135deg, ${mentor.accentColor}, ${mentor.accentColor}88)` }}>
-                              {getInitials(mentor.name)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium text-brand-text truncate">{mentor.name}</p>
-                            <p className="text-[10px] text-brand-text-muted truncate">{mentor.category}</p>
-                          </div>
-                          {selected && <div className="w-4 h-4 rounded-full bg-brand-accent flex items-center justify-center"><X className="w-2.5 h-2.5 text-white" /></div>}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
+          {/* Tab Navigation */}
+          <div className="flex gap-1 mt-4 mb-6 p-1 bg-brand-surface rounded-lg border border-brand-border w-fit">
+            <button
+              onClick={() => setActiveTab("circle")}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                activeTab === "circle"
+                  ? "bg-brand-accent/20 text-brand-accent-light"
+                  : "text-brand-text-muted hover:text-brand-text"
+              }`}
+            >
+              <Brain className="w-4 h-4 inline-block mr-1.5" />
+              Full Circle (2-5)
+            </button>
+            <button
+              onClick={() => setActiveTab("compare")}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                activeTab === "compare"
+                  ? "bg-brand-accent/20 text-brand-accent-light"
+                  : "text-brand-text-muted hover:text-brand-text"
+              }`}
+            >
+              <GitCompare className="w-4 h-4 inline-block mr-1.5" />
+              Perspective Compare (2-3)
+            </button>
+          </div>
 
-              <Card>
-                <CardContent className="p-4">
-                  <h3 className="text-sm font-heading font-semibold text-brand-text mb-2">Your Question</h3>
-                  <Textarea
-                    value={question}
-                    onChange={(e) => setQuestion(e.target.value)}
-                    placeholder="Ask a question that would benefit from multiple perspectives..."
-                    rows={4}
-                  />
-                  <Button
-                    onClick={askCircle}
-                    disabled={!question.trim() || selectedMentorIds.length < 2 || loading}
-                    className="w-full mt-3"
-                  >
-                    {loading ? (
-                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Gathering Wisdom...</>
-                    ) : (
-                      <><Sparkles className="w-4 h-4 mr-2" /> Ask the Circle ({selectedMentorIds.length} mentors)</>
-                    )}
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Right: Responses */}
-            <div className="lg:col-span-2">
-              {!showResults ? (
-                <div className="rounded-xl border border-brand-border border-dashed bg-brand-surface/50 flex items-center justify-center min-h-[400px] p-8">
-                  <div className="text-center">
-                    <Brain className="w-12 h-12 text-brand-text-muted mx-auto mb-3 opacity-50" />
-                    <h3 className="text-lg font-heading font-semibold text-brand-text-muted">Circle Responses Will Appear Here</h3>
-                    <p className="text-sm text-brand-text-muted mt-1">Select 2-5 mentors, ask a question, and compare their wisdom side by side.</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="rounded-lg bg-brand-accent/5 border border-brand-accent/20 p-4">
-                    <p className="text-xs text-brand-accent-light font-medium mb-1">Your Question</p>
-                    <p className="text-sm text-brand-text">{question}</p>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <AnimatePresence>
-                      {responses.map(({ mentorId, response }, i) => {
-                        const mentor = mentors.find((m) => m.id === mentorId);
-                        if (!mentor) return null;
+          {activeTab === "compare" ? (
+            <PerspectiveCompare />
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Left: Setup */}
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Select 2-5 Mentors</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                      {mentors.map((mentor) => {
+                        const selected = selectedMentorIds.includes(mentor.id);
                         return (
-                          <motion.div
-                            key={mentorId}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.1 }}
+                          <button
+                            key={mentor.id}
+                            onClick={() => toggleMentor(mentor.id)}
+                            disabled={!selected && selectedMentorIds.length >= 5}
+                            className={cn(
+                              "w-full flex items-center gap-2 p-2 rounded-lg text-left transition-all border",
+                              selected
+                                ? "border-brand-accent bg-brand-accent/10"
+                                : "border-transparent hover:bg-brand-background disabled:opacity-40"
+                            )}
                           >
-                            <Card className="h-full">
+                            <Avatar size="sm">
+                              <AvatarFallback className="text-[10px]" style={{ background: `linear-gradient(135deg, ${mentor.accentColor}, ${mentor.accentColor}88)` }}>
+                                {getInitials(mentor.name)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium text-brand-text truncate">{mentor.name}</p>
+                              <p className="text-[10px] text-brand-text-muted truncate">{mentor.category}</p>
+                            </div>
+                            {selected && <div className="w-4 h-4 rounded-full bg-brand-accent flex items-center justify-center"><X className="w-2.5 h-2.5 text-white" /></div>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4">
+                    <h3 className="text-sm font-heading font-semibold text-brand-text mb-2">Your Question</h3>
+                    <Textarea
+                      value={question}
+                      onChange={(e) => setQuestion(e.target.value)}
+                      placeholder="Ask a question that would benefit from multiple perspectives..."
+                      rows={4}
+                    />
+                    <Button
+                      onClick={askCircle}
+                      disabled={!question.trim() || selectedMentorIds.length < 2 || loading}
+                      className="w-full mt-3"
+                    >
+                      {loading ? (
+                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Gathering Wisdom...</>
+                      ) : (
+                        <><Sparkles className="w-4 h-4 mr-2" /> Ask the Circle ({selectedMentorIds.length} mentors)</>
+                      )}
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Right: Responses */}
+              <div className="lg:col-span-2">
+                {!showResults ? (
+                  <div className="rounded-xl border border-brand-border border-dashed bg-brand-surface/50 flex items-center justify-center min-h-[400px] p-8">
+                    <div className="text-center">
+                      <Brain className="w-12 h-12 text-brand-text-muted mx-auto mb-3 opacity-50" />
+                      <h3 className="text-lg font-heading font-semibold text-brand-text-muted">Circle Responses Will Appear Here</h3>
+                      <p className="text-sm text-brand-text-muted mt-1">Select 2-5 mentors, ask a question, and compare their wisdom side by side.</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="rounded-lg bg-brand-accent/5 border border-brand-accent/20 p-4">
+                      <p className="text-xs text-brand-accent-light font-medium mb-1">Your Question</p>
+                      <p className="text-sm text-brand-text">{question}</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <AnimatePresence>
+                        {responses.map(({ mentorId, response }, i) => {
+                          const mentor = mentors.find((m) => m.id === mentorId);
+                          if (!mentor) return null;
+                          return (
+                            <motion.div
+                              key={mentorId}
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: i * 0.1 }}
+                            >
+                              <Card className="h-full">
+                                <CardContent className="p-4">
+                                  <div className="flex items-center gap-2 mb-3 pb-3 border-b border-brand-border">
+                                    <Avatar size="sm">
+                                      <AvatarFallback className="text-[10px]" style={{ background: `linear-gradient(135deg, ${mentor.accentColor}, ${mentor.accentColor}88)` }}>
+                                        {getInitials(mentor.name)}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                      <p className="text-sm font-medium text-brand-text">{mentor.name}</p>
+                                      <p className="text-[10px] text-brand-text-muted">{mentor.category}</p>
+                                    </div>
+                                  </div>
+                                  <p className="text-sm text-brand-text leading-relaxed whitespace-pre-line">{response}</p>
+                                </CardContent>
+                              </Card>
+                            </motion.div>
+                          );
+                        })}
+                      </AnimatePresence>
+
+                      {loading && selectedMentorIds
+                        .filter((id) => !responses.find((r) => r.mentorId === id))
+                        .map((id) => {
+                          const mentor = mentors.find((m) => m.id === id);
+                          if (!mentor) return null;
+                          return (
+                            <Card key={id} className="h-full animate-pulse">
                               <CardContent className="p-4">
                                 <div className="flex items-center gap-2 mb-3 pb-3 border-b border-brand-border">
                                   <Avatar size="sm">
@@ -171,51 +249,25 @@ export default function CirclePage() {
                                   </Avatar>
                                   <div>
                                     <p className="text-sm font-medium text-brand-text">{mentor.name}</p>
-                                    <p className="text-[10px] text-brand-text-muted">{mentor.category}</p>
+                                    <p className="text-[10px] text-brand-text-muted">Contemplating...</p>
                                   </div>
+                                  <Loader2 className="w-4 h-4 text-brand-accent ml-auto animate-spin" />
                                 </div>
-                                <p className="text-sm text-brand-text leading-relaxed whitespace-pre-line">{response}</p>
+                                <div className="space-y-2">
+                                  <div className="h-3 bg-brand-border/50 rounded w-full" />
+                                  <div className="h-3 bg-brand-border/50 rounded w-4/5" />
+                                  <div className="h-3 bg-brand-border/50 rounded w-3/5" />
+                                </div>
                               </CardContent>
                             </Card>
-                          </motion.div>
-                        );
-                      })}
-                    </AnimatePresence>
-
-                    {loading && selectedMentorIds
-                      .filter((id) => !responses.find((r) => r.mentorId === id))
-                      .map((id) => {
-                        const mentor = mentors.find((m) => m.id === id);
-                        if (!mentor) return null;
-                        return (
-                          <Card key={id} className="h-full animate-pulse">
-                            <CardContent className="p-4">
-                              <div className="flex items-center gap-2 mb-3 pb-3 border-b border-brand-border">
-                                <Avatar size="sm">
-                                  <AvatarFallback className="text-[10px]" style={{ background: `linear-gradient(135deg, ${mentor.accentColor}, ${mentor.accentColor}88)` }}>
-                                    {getInitials(mentor.name)}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div>
-                                  <p className="text-sm font-medium text-brand-text">{mentor.name}</p>
-                                  <p className="text-[10px] text-brand-text-muted">Contemplating...</p>
-                                </div>
-                                <Loader2 className="w-4 h-4 text-brand-accent ml-auto animate-spin" />
-                              </div>
-                              <div className="space-y-2">
-                                <div className="h-3 bg-brand-border/50 rounded w-full" />
-                                <div className="h-3 bg-brand-border/50 rounded w-4/5" />
-                                <div className="h-3 bg-brand-border/50 rounded w-3/5" />
-                              </div>
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
+                          );
+                        })}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </main>
     </div>

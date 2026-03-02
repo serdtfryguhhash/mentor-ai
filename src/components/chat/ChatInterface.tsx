@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn, getInitials, generateId } from "@/lib/utils";
 import { Mentor, ChatMessage } from "@/types";
 import { useStore } from "@/store/useStore";
+import { buildMentorMemory, formatMemoryForPrompt, formatGoalsForPrompt } from "@/lib/ai-memory";
 import ReactMarkdown from "react-markdown";
 
 interface ChatInterfaceProps {
@@ -22,7 +23,7 @@ export default function ChatInterface({ mentor, sessionId }: ChatInterfaceProps)
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const { sessions, addMessage, addInsight } = useStore();
+  const { sessions, addMessage, addInsight, mentorGoals } = useStore();
 
   const session = sessions.find((s) => s.id === sessionId);
   const messages = session?.messages || [];
@@ -45,6 +46,21 @@ export default function ChatInterface({ mentor, sessionId }: ChatInterfaceProps)
         content: m.content,
       }));
 
+      // Build mentor memory from past sessions
+      const memory = buildMentorMemory(mentor.id, sessions);
+      const memoryPrompt = formatMemoryForPrompt(memory);
+
+      // Build active goals context
+      const goalsForPrompt = formatGoalsForPrompt(
+        mentorGoals.map((g) => ({
+          title: g.title,
+          category: g.category,
+          progress: g.progress,
+          mentorId: g.mentorId,
+        })),
+        mentor.id
+      );
+
       const res = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -54,6 +70,8 @@ export default function ChatInterface({ mentor, sessionId }: ChatInterfaceProps)
           mentorSystemPrompt: mentor.systemPrompt,
           message: userMessage,
           conversationHistory,
+          mentorMemory: memoryPrompt,
+          activeGoals: goalsForPrompt,
         }),
       });
 
@@ -284,4 +302,3 @@ export default function ChatInterface({ mentor, sessionId }: ChatInterfaceProps)
     </div>
   );
 }
-

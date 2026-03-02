@@ -4,14 +4,35 @@ import { chat, mentorChat, mentorCircle, generateDailyWisdom, recommendMentors }
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { action, message, mentorName, mentorSystemPrompt, mentorContext, conversationHistory, mentors, question, goals } = body;
+    const {
+      action,
+      message,
+      mentorName,
+      mentorSystemPrompt,
+      mentorContext,
+      conversationHistory,
+      mentors,
+      question,
+      goals,
+      mentorMemory,
+      activeGoals,
+    } = body;
 
     let response: string | Array<{ mentorName: string; response: string }>;
 
     switch (action) {
-      case "mentor-chat":
-        response = await mentorChat(mentorName, mentorSystemPrompt, message, conversationHistory || []);
+      case "mentor-chat": {
+        // Inject mentor memory and active goals into the system prompt
+        let enhancedPrompt = mentorSystemPrompt || "";
+        if (mentorMemory) {
+          enhancedPrompt += mentorMemory;
+        }
+        if (activeGoals) {
+          enhancedPrompt += activeGoals;
+        }
+        response = await mentorChat(mentorName, enhancedPrompt, message, conversationHistory || []);
         break;
+      }
       case "mentor-circle":
         response = await mentorCircle(mentors, question || message);
         break;

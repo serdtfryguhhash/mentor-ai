@@ -5,7 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   MessageCircle, Brain, Sun, BookOpen, ArrowRight, Clock,
-  Sparkles, TrendingUp, Users, ChevronRight, Crown, Star
+  Sparkles, TrendingUp, Users, ChevronRight, Crown, Star, Zap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +15,11 @@ import Navbar from "@/components/layout/Navbar";
 import { useStore } from "@/store/useStore";
 import { mentors } from "@/data/mentors";
 import { getInitials, formatDate } from "@/lib/utils";
+import { getLevel, getLevelProgress } from "@/lib/gamification";
+import SessionStreak from "@/components/features/session-streak";
+import DailyReflection from "@/components/features/daily-reflection";
+import WeeklyReportWidget from "@/components/features/weekly-report";
+import ShareCard from "@/components/shared/ShareCard";
 
 const dailyQuote = {
   mentor: mentors[0],
@@ -23,12 +28,15 @@ const dailyQuote = {
 };
 
 export default function DashboardPage() {
-  const { user, sessions, insights, favoriteMentors } = useStore();
+  const { user, sessions, insights, favoriteMentors, xp, sessionStreak } = useStore();
   const recentSessions = sessions.slice(0, 3);
   const favMentors = mentors.filter((m) => favoriteMentors.includes(m.id));
   const recommendedMentors = user?.recommended_mentors
     ? mentors.filter((m) => user.recommended_mentors.includes(m.id))
     : mentors.slice(0, 5);
+
+  const level = getLevel(xp);
+  const levelProgress = getLevelProgress(xp);
 
   return (
     <div className="min-h-screen bg-brand-background">
@@ -37,10 +45,20 @@ export default function DashboardPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
           {/* Welcome */}
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-            <h1 className="text-2xl sm:text-3xl font-heading font-bold text-brand-text">
-              Welcome back{user?.full_name ? `, ${user.full_name.split(" ")[0]}` : ""}
-            </h1>
-            <p className="text-brand-text-muted mt-1">Your mentors are ready. What wisdom do you seek today?</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-heading font-bold text-brand-text">
+                  Welcome back{user?.full_name ? `, ${user.full_name.split(" ")[0]}` : ""}
+                </h1>
+                <p className="text-brand-text-muted mt-1">Your mentors are ready. What wisdom do you seek today?</p>
+              </div>
+              <div className="hidden sm:flex items-center gap-2">
+                <div className={`px-3 py-1.5 rounded-full bg-gradient-to-r ${level.gradient} text-white text-xs font-semibold flex items-center gap-1`}>
+                  <Zap className="w-3 h-3" />
+                  {level.icon} {level.name} &middot; {xp} XP
+                </div>
+              </div>
+            </div>
           </motion.div>
 
           {/* Daily Wisdom Card */}
@@ -106,8 +124,14 @@ export default function DashboardPage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Recommended Mentors */}
-            <div className="lg:col-span-2">
+            {/* Left Column */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Daily Reflection */}
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+                <DailyReflection />
+              </motion.div>
+
+              {/* Recommended Mentors */}
               <Card>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
@@ -143,10 +167,21 @@ export default function DashboardPage() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Weekly Report */}
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
+                <WeeklyReportWidget />
+              </motion.div>
+
+              {/* Share Card */}
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+                <ShareCard />
+              </motion.div>
             </div>
 
-            {/* Stats & Recent */}
+            {/* Right Column */}
             <div className="space-y-6">
+              {/* Journey Stats */}
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg">Your Journey</CardTitle>
@@ -168,6 +203,11 @@ export default function DashboardPage() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Session Streak */}
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+                <SessionStreak />
+              </motion.div>
 
               {recentSessions.length > 0 && (
                 <Card>

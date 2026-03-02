@@ -154,3 +154,80 @@ export interface PricingTier {
   stripePriceId: string;
   tier: "free" | "mentee" | "executive";
 }
+
+// ====== New Feature Types ======
+
+export type WisdomTag = "career" | "relationships" | "health" | "mindset" | "finance" | "leadership" | "creativity" | "spirituality";
+
+export interface WisdomEntry {
+  id: string;
+  content: string;
+  mentorId: string;
+  sessionId: string | null;
+  tags: WisdomTag[];
+  source: "conversation" | "circle" | "manual";
+  created_at: string;
+}
+
+export type GrowthDimension = "Career" | "Personal" | "Health" | "Relationships" | "Finance";
+
+export interface GrowthAssessment {
+  id: string;
+  date: string;
+  scores: Record<GrowthDimension, number>;
+  overallScore: number;
+}
+
+export type GoalCategory = "Career" | "Personal Growth" | "Health" | "Learning" | "Relationships";
+
+export interface MentorGoal {
+  id: string;
+  title: string;
+  description: string;
+  category: GoalCategory;
+  mentorId: string;
+  progress: number;
+  milestones: GoalMilestone[];
+  created_at: string;
+  updated_at: string;
+  completed: boolean;
+}
+
+export interface GoalMilestone {
+  id: string;
+  title: string;
+  completed: boolean;
+}
+
+export interface DailyReflection {
+  id: string;
+  date: string;
+  mentorId: string;
+  question: string;
+  response: string;
+  created_at: string;
+}
+
+export interface WeeklyReport {
+  id: string;
+  weekStarting: string;
+  content: string;
+  sessionsCount: number;
+  insightsCount: number;
+  goalsProgressed: number;
+  created_at: string;
+}
+
+export interface SavedComparison {
+  id: string;
+  question: string;
+  mentorResponses: { mentorId: string; response: string }[];
+  created_at: string;
+}
+
+export interface XPEvent {
+  id: string;
+  action: string;
+  xp: number;
+  timestamp: string;
+}
