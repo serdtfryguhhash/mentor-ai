@@ -1,5 +1,5 @@
 /**
- * Mentor Memory — Accumulates per-mentor memory across sessions.
+ * Mentor Memory - Accumulates per-mentor memory across sessions.
  * Tracks past conversation summaries, goals discussed, challenges, and advice given.
  * This memory is injected into AI context so mentors reference past conversations.
  */
@@ -92,7 +92,7 @@ export function formatMemoryForPrompt(memory: MentorMemory): string {
   if (memory.totalSessions === 0) return "";
 
   const parts: string[] = [
-    `\n\nMENTOR MEMORY — Previous interactions with this mentee (${memory.totalSessions} sessions):`,
+    `\n\nMENTOR MEMORY - Previous interactions with this mentee (${memory.totalSessions} sessions):`,
   ];
 
   if (memory.lastSessionDate) {

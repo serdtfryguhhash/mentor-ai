@@ -1,5 +1,5 @@
 /**
- * Mentee XP & Levels — Gamification system for Mentor AI.
+ * Mentee XP & Levels - Gamification system for Mentor AI.
  * XP is earned through various actions, levels unlock based on cumulative XP.
  */
 

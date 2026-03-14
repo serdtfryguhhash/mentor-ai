@@ -43,7 +43,7 @@ export function XPBar() {
 
       {showTooltip && (
         <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap z-50 shadow-lg">
-          <div className="font-semibold">{level.icon} {level.name} — {xp} XP</div>
+          <div className="font-semibold">{level.icon} {level.name} - {xp} XP</div>
           {nextLevel && (
             <div className="text-gray-400 mt-0.5">{xpToNext} XP to {nextLevel.name}</div>
           )}

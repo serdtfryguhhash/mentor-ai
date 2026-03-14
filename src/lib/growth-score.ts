@@ -1,5 +1,5 @@
 /**
- * Growth Score — Composite growth scoring system across 5 dimensions.
+ * Growth Score - Composite growth scoring system across 5 dimensions.
  * Career, Personal, Health, Relationships, Finance.
  */
 

@@ -1,5 +1,5 @@
 /**
- * Mentor.ai — AI Client powered by Anthropic Claude SDK
+ * Mentor.ai - AI Client powered by Anthropic Claude SDK
  *
  * Uses Claude claude-sonnet-4-20250514 via the Anthropic SDK.
  * Each mentor has a unique system prompt that shapes their personality.
@@ -56,7 +56,7 @@ export async function mentorChat(
     - Draw from their documented philosophy, writings, and life experiences
     - Provide actionable advice grounded in their worldview
     - End with a thought-provoking question to deepen the mentee's thinking
-    - Be warm but challenging — great mentors push growth
+    - Be warm but challenging - great mentors push growth
     - Reference specific events from their life when relevant
 
     DISCLAIMER: AI simulation for educational purposes, not the actual person.`,
@@ -68,7 +68,7 @@ export async function mentorChat(
   );
 }
 
-/** Mentor Circle — get responses from multiple mentors on one question */
+/** Mentor Circle - get responses from multiple mentors on one question */
 export async function mentorCircle(
   mentors: Array<{ name: string; systemPrompt: string }>,
   question: string
@@ -88,7 +88,7 @@ export async function generateDailyWisdom(mentorName: string, mentorContext: str
   return chat([
     {
       role: "system",
-      content: `You are ${mentorName}. Share a brief daily wisdom — a thought, quote,
+      content: `You are ${mentorName}. Share a brief daily wisdom - a thought, quote,
       challenge, or reflection that captures your philosophy. Keep it under 100 words.
       Make it feel personal and powerful. End with a small challenge or question.
       Context about you: ${mentorContext}`,
